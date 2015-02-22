@@ -1,6 +1,6 @@
 (function(){
 	console.log('hello world');
-	var ROOT = 'http://localhost:3000/collections'
+	var ROOT = 'http://192.168.0.9:3000/collections'
 
 
 	var save_model = function(model){
@@ -25,12 +25,8 @@
 	});
 
 	var collection = new Collection();
-	$('#')
 
 
-
-	
-	
 	function save(){
 		var model1 = new Modelo({title:'onePlus', model:'One', chip:'SnapDragon'});	
 		var model2 = new Modelo({title:'Samsung', model:'Galaxy', chip:'M4 Cortex'});
@@ -97,6 +93,19 @@
 		}
 	});
 
+	var live_reload = function(){
+		var socket = io('http://192.168.0.9:3001/');
+		return{
+			listen:function(collection){
+				socket.on('refresh', function (data) {
+					console.log('data->', data);
+					collection.fetch({reset:true});
+				});
+			}
+		}
+	}();
+
+
 	var Home = Backbone.View.extend({
 		el:'#panel', 
 		model_to_update: null,
@@ -108,7 +117,9 @@
 
 		initialize:function(){
 			//collection.on('reset', this.handle_reset);	
-			collection.fetch({reset:true}); // => 2 (collection have been populated)
+			//collection.fetch({reset:true}); // => 2 (collection have been populated)
+			collection.fetch({reset:true});
+			live_reload.listen(collection);
 
 			this.listenTo(collection, 'reset', this.handle_reset);
 			this.listenTo(collection, 'add', this.list_add);
@@ -166,12 +177,17 @@
 		},
 
 		list_add: function(m){
+			console.log('list.add');
+
 			var cell = new Cell({model:m});
 			$('#list').append(cell.render().el);
 			this.cell_view.push(cell)
 		},
 
 		handle_reset: function(c){
+			console.log('handle.reset');
+			this.cell_view = [];
+			$('#list').html('');
 			var that = this;
 			this.cell_view= [];
 			c.each(function(m){
